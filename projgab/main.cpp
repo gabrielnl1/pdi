@@ -17,6 +17,16 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+     Mat src = imread( "budismo-buda.jpg", IMREAD_GRAYSCALE );
+     Mat dst;
+
+     //Apply median filter
+     medianBlur ( src, dst, 7 );
+     imshow("source", src);
+     imshow("result", dst);
+
+     waitKey(0);
+
 
     // Código para criar uma trackbar e fazer BITWISE AND na imagem, com um escalar
     /*

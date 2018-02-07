@@ -1,0 +1,29 @@
+#include <QApplication>
+
+#include <iostream>
+#include <string>
+
+#include <cv.h>
+#include <opencv2/videoio.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+
+using namespace cv;
+using namespace std;
+
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+ 
+    // Preencher uma matriz 500x500 com números aleatórios normalmente distribuídos
+    
+    Mat img = Mat::zeros(500,500,CV_8UC1);
+    cv::randn(img,0,255);
+    imshow("img", img);
+    waitKey(0);
+    
+
+    return a.exec();
+}
+

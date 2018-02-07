@@ -1,0 +1,41 @@
+#include <QApplication>
+
+#include <iostream>
+#include <string>
+
+#include <cv.h>
+#include <opencv2/videoio.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+
+using namespace cv;
+using namespace std;
+
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+ 
+    //Somar duas imagens utilizando alpha e beta e a função addWeighted
+    
+    int alpha = 0;
+    int beta = 0;
+    cv::Mat src1 = cv::imread("512buda.png", IMREAD_COLOR);
+    cv::Mat src2 = cv::imread("lena.png", IMREAD_COLOR);
+    namedWindow("bin", WINDOW_KEEPRATIO);
+    createTrackbar("alpha", "bin", &alpha, 255, 0);
+    for (;;)
+    {
+        Mat dst;
+        beta = ( 255 - alpha );
+        addWeighted( src1, (double)alpha/255, src2, (double)beta/255, 0.0, dst);
+        imshow( "bin", dst );
+        if ((char) waitKey(1) == 'q') break;
+    }
+    
+    
+
+
+    return a.exec();
+}
+
