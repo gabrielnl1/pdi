@@ -17,6 +17,8 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+     // código para aplicar o filtro da mediana
+     /*
      Mat src = imread( "budismo-buda.jpg", IMREAD_GRAYSCALE );
      Mat dst;
 
@@ -26,6 +28,7 @@ int main(int argc, char *argv[])
      imshow("result", dst);
 
      waitKey(0);
+     */
 
 
     // Código para criar uma trackbar e fazer BITWISE AND na imagem, com um escalar
@@ -49,11 +52,75 @@ int main(int argc, char *argv[])
     cout << img << endl;
     */
 
-    // Preencher uma matriz 500x500 com números aleatórios normalmente distribuídos
     /*
-    Mat img = Mat::zeros(500,500,CV_8UC1);
-    cv::randn(img,0,255);
+
+    // Preencher uma matriz 500x500 com números aleatórios normalmente distribuídos e somar com outra imagem e calcular o histograma da imagem com números aleatórios
+
+    Mat N = Mat::zeros(640,480,CV_8UC1);
+    cv::randn(N, 127, 30);
+    imshow("N", N);
+
+    Mat img = cv::imread("budismo-buda.jpg", IMREAD_GRAYSCALE); //a imagem é 640x480
     imshow("img", img);
+
+    Mat bin;
+    bin = img + N;
+    imshow("bin", bin);
+
+    //calcular o histograma da imagem N
+     /// Establish the number of bins
+     int histSize = 256;
+
+     /// Set the ranges ( for B,G,R) )
+     float range[] = { 0, 256 } ;
+     const float* histRange = { range };
+
+     bool uniform = true; bool accumulate = false;
+
+     Mat gray_hist;
+
+     /// Compute the histograms:
+     calcHist( &N, 1, 0, Mat(), gray_hist, 1, &histSize, &histRange, uniform, accumulate );
+
+     // Draw the histograms for B, G and R
+     int hist_w = 512; int hist_h = 400;
+     int bin_w = cvRound( (double) hist_w/histSize );
+
+     Mat histImage( hist_h, hist_w, CV_8UC3, Scalar( 0,0,0) );
+
+     /// Normalize the result to [ 0, histImage.rows ]
+     normalize(gray_hist, gray_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
+
+     /// Draw for each channel
+     for( int i = 1; i < histSize; i++ )
+     {
+         line( histImage, Point( bin_w*(i-1), hist_h - cvRound(gray_hist.at<float>(i-1)) ) ,
+                          Point( bin_w*(i), hist_h - cvRound(gray_hist.at<float>(i)) ),
+                          Scalar( 255, 255, 255), 2, 8, 0  );
+
+     }
+
+     /// Display
+     namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
+     imshow("calcHist Demo", histImage );
+
+     waitKey(0);
+     */
+
+
+    /*
+    Mat N = Mat::ones(500,500,CV_8UC1);
+    N = N*255;
+    for (int i =0; i<256;i++) {
+        for (int j=0; j<256;j++)
+        {
+            N.at<int>(i,j) = (1/2*3.14)*exp(-[i-
+                    ]);
+        }
+    }
+
+
+    imshow("N", N);
     waitKey(0);
     */
 
