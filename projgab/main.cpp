@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     /*
 
-    // Preencher uma matriz 500x500 com números aleatórios normalmente distribuídos e somar com outra imagem e calcular o histograma da imagem com números aleatórios
+    // Preencher uma matriz 500x500 com números aleatórios normalmente distribuídos e somar com outra imagem e calcular o histograma da imagem com números aleatórios, tons de cinza
 
     Mat N = Mat::zeros(640,480,CV_8UC1);
     cv::randn(N, 127, 30);
@@ -108,13 +108,17 @@ int main(int argc, char *argv[])
      */
 
 
-    /*
+/*
+    Scalar intensity = img.at<uchar>(y, x);
+
+
+
     Mat N = Mat::ones(500,500,CV_8UC1);
     N = N*255;
     for (int i =0; i<256;i++) {
         for (int j=0; j<256;j++)
         {
-            N.at<int>(i,j) = (1/2*3.14)*exp(-[i-
+            N.at<uchar>(j,i) = (1/2*3.14)*exp(-[i-
                     ]);
         }
     }
@@ -123,6 +127,7 @@ int main(int argc, char *argv[])
     imshow("N", N);
     waitKey(0);
     */
+
 
     // Subtrair duas imagens e pegar o módulo para exibir na tela
     /*
@@ -167,6 +172,29 @@ int main(int argc, char *argv[])
         if ((char) waitKey(1) == 'q') break;
     }
     */
+
+    Mat img = imread("spectrum.tif", IMREAD_GRAYSCALE);
+    Mat img2;
+    img2.create(img.rows, img.cols, CV_64F);
+    double c= 1;
+    for (int x = 0; x < img.cols; x++) {
+        for (int y = 0; y < img.rows; y++) {
+            Scalar intensity = img.at<uchar>(y,x);
+            double intensity_new = c* log (1+(double)intensity.val[0]);
+            img2.at<uchar>(y,x) = intensity_new;
+        }
+    }
+    normalize(img2,img2,1,0,NORM_MINMAX);
+    //para normalizar uma imagem que tem valores negativos, a normalização é I-min(I)/max(I)-min(I) ,
+    //onde I é a imagem, min(I) é o menor valor dos pixels da imagem, e max(I) é o valor máximo
+    img2 = 255*img2;
+    img2.convertTo(img2, CV_8U);
+
+    namedWindow("img",WINDOW_KEEPRATIO);
+    namedWindow("img2",WINDOW_KEEPRATIO);
+    imshow("img", img);
+    imshow("img2",img2);
+    waitKey(0);
 
     return a.exec();
 }
