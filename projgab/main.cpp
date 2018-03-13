@@ -3,14 +3,80 @@
 #include <iostream>
 #include <string>
 
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/highgui/highgui.hpp>
 #include <cv.h>
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
+//#include <opencv2/core/mat.hpp>
+
+
+//#include "dip.h"
+//#include <mydft.h>
+//#include <opencv2/viz.hpp>
 
 
 using namespace cv;
 using namespace std;
+
+Mat scaleImage2_uchar(Mat &src)
+{
+    Mat tmp = src.clone();
+    if(src.type() != CV_32F)
+        tmp.convertTo(tmp, CV_32F);
+
+    normalize(tmp, tmp, 1, 0, NORM_MINMAX);
+    normalize(tmp, tmp, 1, 0, NORM_MINMAX);
+
+    tmp = 255 * tmp;
+    tmp.convertTo(tmp, CV_8U, 1, 0);
+    return tmp;
+}
+
+Mat fftshift (const Mat &src)
+{
+    Mat tmp = src.clone();
+    Mat tmp2;
+
+    // crop the image, if it has an odd number of rows or columns
+    tmp = tmp(Rect(0, 0, tmp.cols & -2, tmp.rows & -2));
+
+    // rearrange the quadrants of Fourier image so that the origin is at the image center
+    int cx = tmp.cols/2;
+    int cy = tmp.rows/2;
+
+    Mat q0(tmp, Rect(0, 0, cx, cy)); // Top-Left - Create a ROI per quadrant
+    Mat q1(tmp, Rect(cx, 0, cx, cy)); // Top-Right
+    Mat q2(tmp, Rect(0, cy, cx, cy)); // Bottom-Left
+    Mat q3(tmp, Rect(cx, cy, cx, cy)); // Bottom-Right
+
+    q1.copyTo(tmp2); // swap quadrant (Top-Right with Bottom-Left)
+    q2.copyTo(q1);
+    tmp2.copyTo(q2);
+
+    q0.copyTo(tmp2);
+    q3.copyTo(q0);
+    tmp2.copyTo(q3);
+
+    return tmp;
+}
+
+Mat createWhiteDisk(int rows, int cols, int xc, int yc, int radius) {
+    //Discrete Fourier Transform - images filtering
+    Mat disk0 = Mat::zeros(rows, cols, CV_32F);
+    Mat disk = disk0.clone();
+
+    for(int x = 0; x < cols; x++)  {
+        for(int y = 0; y < rows; y++)  {
+            if ((x - xc) * (x - xc) + (y - yc) * (y - yc) <= radius * radius) {
+                disk.at<float>(y,x) = 1.0;
+            }
+        }
+    }
+    return disk;
+}
 
 
 int main(int argc, char *argv[])
@@ -264,6 +330,9 @@ int main(int argc, char *argv[])
     }
     */
 
+    //filtragem de intensidades de interesse
+
+    /*
     Mat img = imread("kidney.tif", IMREAD_GRAYSCALE);
     int thresh1 = 127;
     int thresh2 = 240;
@@ -290,7 +359,199 @@ int main(int argc, char *argv[])
         imshow("img2",img2);
         if((char)waitKey(1) == 'q') break;
     }
+    */
 
+    //criando e utilizando máscaras
+    //transformação de intensidade
+    /*
+    Mat img = imread("lena.png", IMREAD_GRAYSCALE);
+    Mat gx, gy,g;
+    img.convertTo(img, CV_32F,1,0);
+    normalize(img,img,1,0,NORM_MINMAX);
+    Mat kx = (Mat_<float>(3,3) <<
+              -1,   0,  1,
+              -2,   0,  2,
+              -1,   0,  1,
+              );
+    Mat ky = (Mat_<float>(3,3) <<
+              -1,   -2, -1,
+              0,    0,  0,
+              1,    2,  1
+              );
+    filter2D(img,gx,CV_32F,kx,Point(-1,-1),0, BORDER_DEFAULT);
+    filter2D(img,gy,CV_32F,ky,Point(-1,-1), 0, BORDER_DEFAULT);
+    g = abs(gx) + abs(gy);
+    gx = scaleImage2_uchar(gx);
+    gy = scaleImage2_uchar(gy);
+    g = scaleImage2_uchar(g);
+    for (;;) {
+        imshow("img",img);
+        imshow("gx",gx);
+        imshow("gy",gy);
+        imshow("g",g);
+        if ((char)waitKey(1) == 'q') break;
+    }
+    */
+
+
+    // codigo para borrar imagem
+    /*
+    namedWindow("img", WINDOW_KEEPRATIO);
+    namedWindow("img2", WINDOW_KEEPRATIO);
+
+    Mat img = imread("lena.png", IMREAD_COLOR);
+    Mat img2;
+    int ksizex = 3; int ksizey = 3;
+    createTrackbar("ksizex", "img2", &kisezx, 63,0,0);
+    createTrackbar("ksizey", "img2", &kisezy, 63,0,0);
+    for(;;){
+        if (ksizex < 1) ksizex = 1;
+        if (ksizey < 1) ksizey = 1;
+        blur(img,img2,Size(ksizex,ksizey), Point(-1,-1), BORDER_DEFAULT);
+        imshow("img",img);
+        imshow("img2", img2);
+        if ((char)waitKey(1)=='q') break;
+    }
+    */
+
+    /*
+     *
+     *
+    Mat img = imread("/home/geymerson/Imagens/tungsten_preview.jpeg", IMREAD_GRAYSCALE);
+    Mat img2, img3;
+    int factor = 5;
+    img.convertTo(img, CV_32F);
+    Mat kernel = (Mat_<float> (3,3) <<
+                  1.0, 1.0, 1.0,
+                  1.0, -8.0, 1.0,
+                  1.0, 1.0, 1.0);
+
+    filter2D(img, img2, CV_32F, kernel, Point(-1,-1), 0, BORDER_DEFAULT);
+    namedWindow("img3", WINDOW_KEEPRATIO);
+    createTrackbar("factor", "img3", &factor, 100, 0, 0);
+    for(;;) {
+//        Mat hist
+        add(img, -(factor/100.0)*img2, img3, noArray(), CV_8U);
+        imshow("img", scaleImage2_uchar(img));
+        imshow("img2", scaleImage2_uchar(img2));
+        imshow("img3", scaleImage2_uchar(img3));
+        if((char)waitKey(1) == 'q') break;
+    }
+//    Laplacian();
+    */
+
+    //fourier transf
+/*
+
+    namedWindow("img", WINDOW_KEEPRATIO);
+    namedWindow("img2",WINDOW_KEEPRATIO);
+    namedWindow("planes0", WINDOW_KEEPRATIO);
+    namedWindow("planes1", WINDOW_KEEPRATIO);
+
+    Mat img = imread("rectangle.jpg",IMREAD_GRAYSCALE);
+    Mat planes [] = {Mat_<float>(img), Mat::zeros(img.size(), CV_32F)};
+    Mat img2;
+
+    merge(planes,2,img2);
+    dft(img2,img2);
+    split(img2,planes);
+    normalize(planes[0], planes[0], 1, 0, NORM_MINMAX);
+    normalize(planes[1], planes[1], 1, 0, NORM_MINMAX);
+    for (;;) {
+        imshow("img",scaleImage2_uchar(img));
+        imshow("planes0",planes[0]);
+        imshow("planes1",planes[1]);
+        if((char)waitKey(1) == 'q') break;
+    }
+*/
+
+    //second code
+    //logtransform
+    /*
+    Mat img = imread("rectangle.jpg",IMREAD_GRAYSCALE);
+    Mat planes[] = {Mat_<float>(img), Mat::zeros(img.size(),CV_32F)};
+    Mat img2;
+
+    merge(planes,2,img2);
+    dft(img,img2);
+    split(img,planes);
+    Mat mag;
+    magnitude(planes[0],planes[1],mag);
+    mag = applyLogTransform(mag);
+
+    for (;;)
+    {
+        imshow("img",scaleImage2_uchar(img));
+        imshow("mag",fftshift(scaleImag2_uchar(mag)));
+        if ((char)waitKey(1)=='q') break;
+    }
+
+    */
+    /* create a disk main
+    namedWindow("disk", WINDOW_KEEPRATIO);
+
+    Mat disk0 = Mat::zeros(200, 200, CV_32F);
+    Mat disk = disk0.clone();
+
+    int xc = 100;
+    int yc = 100;
+    int radius = 20;
+
+    createTrackbar("xc", "disk", &xc, disk.cols, 0);
+    createTrackbar("yc", "disk", &yc, disk.rows, 0);
+    createTrackbar("radius", "disk", &radius, disk.cols, 0);
+
+
+    for(;;)
+    {
+
+        disk = disk0.clone();
+
+        for(int x = 0; x < disk.cols; x++)
+        {
+            for(int y = 0; y < disk.rows; y++)
+            {
+                if ((x - xc) * (x - xc) + (y - yc) * (y - yc) <= radius * radius)
+                        disk.at<float>(y,x) = 1.0;
+            }
+        }
+
+        imshow("disk", disk);
+        if((char)waitKey(1) == 'q') break;
+    } */
+
+    /* FILTERING LOW FREQUENCIES OR HIGH FREQUENCIES WITH DFT
+
+    Mat img = imread("angelderessur.jpg", IMREAD_GRAYSCALE);
+    Mat img2 = img.clone();
+
+    int radius = 512;
+    namedWindow("mask", WINDOW_KEEPRATIO);
+    createTrackbar("radius","mask",&radius, img2.cols,0,0);
+    for (;;) {
+        Mat mask = createWhiteDisk (img2.rows, img2.cols, (int)img2.cols/2, (int)img2.rows/2, radius);
+        mask = fftshift(mask);
+        //mask = 1-mask; filtro passa alta ou passa baixa
+        Mat planes[] = {Mat_<float>(img), Mat::zeros(img.size(), CV_32F)};
+        merge(planes,2,img2);
+        dft(img2,img2);
+        split(img2,planes);
+
+        multiply(planes[0],mask,planes[0]);
+        multiply(planes[1],mask,planes[1]);
+        merge(planes,2,img2);
+        idft(img2,img2,DFT_REAL_OUTPUT);
+        img2 = fftshift(img2);
+
+        imshow("img",scaleImage2_uchar(img));
+        imshow("planes_0",fftshift(planes[0]));
+        imshow("planes_1", fftshift(planes[1]));
+        imshow("mask", fftshift(mask));
+        imshow("img2",fftshift(scaleImage2_uchar(img2)));
+        if ((char)waitKey(1) == 'q') break;
+    }
+
+     */
     return a.exec();
 }
 
